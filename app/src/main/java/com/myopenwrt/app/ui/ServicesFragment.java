@@ -15,11 +15,13 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.myopenwrt.app.R;
 import com.myopenwrt.app.api.ApiCallback;
 import com.myopenwrt.app.api.OpenWrtApi;
@@ -35,10 +37,13 @@ public class ServicesFragment extends Fragment {
     private SwipeRefreshLayout swipe;
     private RecyclerView recycler;
     private TextView emptyText;
+    private TextView tvSubtitle;
     private EditText etSearch;
+    private TextView chipAll, chipRunning, chipEnabled;
     private ServiceAdapter adapter;
     private final List<ServiceInfo> allData = new ArrayList<>();
     private final List<ServiceInfo> filtered = new ArrayList<>();
+    private String filter = "all";
 
     @Nullable
     @Override
@@ -54,13 +59,24 @@ public class ServicesFragment extends Fragment {
         swipe = view.findViewById(R.id.swipe);
         recycler = view.findViewById(R.id.recycler);
         emptyText = view.findViewById(R.id.empty_text);
+        tvSubtitle = view.findViewById(R.id.tv_subtitle);
         etSearch = view.findViewById(R.id.et_search);
+        chipAll = view.findViewById(R.id.chip_all);
+        chipRunning = view.findViewById(R.id.chip_running);
+        chipEnabled = view.findViewById(R.id.chip_enabled);
 
         recycler.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new ServiceAdapter();
         recycler.setAdapter(adapter);
 
+        swipe.setColorSchemeResources(R.color.primary);
         swipe.setOnRefreshListener(this::loadData);
+        view.findViewById(R.id.btn_refresh).setOnClickListener(v -> loadData());
+        chipAll.setOnClickListener(v -> setFilter("all"));
+        chipRunning.setOnClickListener(v -> setFilter("running"));
+        chipEnabled.setOnClickListener(v -> setFilter("enabled"));
+        updateChips();
+
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
             @Override public void onTextChanged(CharSequence s, int a, int b, int c) { applyFilter(s.toString()); }
@@ -74,12 +90,33 @@ public class ServicesFragment extends Fragment {
         loadData();
     }
 
+    private void setFilter(String value) {
+        filter = value;
+        updateChips();
+        applyFilter(etSearch.getText().toString());
+    }
+
+    private void updateChips() {
+        styleChip(chipAll, "all".equals(filter));
+        styleChip(chipRunning, "running".equals(filter));
+        styleChip(chipEnabled, "enabled".equals(filter));
+    }
+
+    private void styleChip(TextView chip, boolean selected) {
+        chip.setBackgroundResource(selected
+                ? R.drawable.bg_filter_chip_selected : R.drawable.bg_filter_chip);
+        chip.setTextColor(ContextCompat.getColor(requireContext(),
+                selected ? R.color.white : R.color.text_primary));
+        chip.setTypeface(null, selected ? Typeface.BOLD : Typeface.NORMAL);
+    }
+
     private void loadData() {
         if (!api.hasSession()) {
             emptyText.setText("请先在「设置」中连接路由器");
             emptyText.setVisibility(View.VISIBLE);
             recycler.setVisibility(View.GONE);
             swipe.setRefreshing(false);
+            if (tvSubtitle != null) tvSubtitle.setText(R.string.state_disconnected);
             return;
         }
         api.getServices(new ApiCallback<List<ServiceInfo>>() {
@@ -89,6 +126,11 @@ public class ServicesFragment extends Fragment {
                 swipe.setRefreshing(false);
                 allData.clear();
                 allData.addAll(result);
+                if (tvSubtitle != null) {
+                    tvSubtitle.setText(allData.isEmpty()
+                            ? getString(R.string.services_subtitle)
+                            : "共 " + allData.size() + " 个服务");
+                }
                 applyFilter(etSearch.getText().toString());
             }
 
@@ -105,12 +147,16 @@ public class ServicesFragment extends Fragment {
         filtered.clear();
         String key = kw == null ? "" : kw.toLowerCase(Locale.getDefault()).trim();
         for (ServiceInfo s : allData) {
-            if (key.isEmpty() || (s.name != null && s.name.toLowerCase(Locale.getDefault()).contains(key))) {
-                filtered.add(s);
+            if (!key.isEmpty()
+                    && (s.name == null || !s.name.toLowerCase(Locale.getDefault()).contains(key))) {
+                continue;
             }
+            if ("running".equals(filter) && !s.running) continue;
+            if ("enabled".equals(filter) && !s.enabled) continue;
+            filtered.add(s);
         }
         if (filtered.isEmpty()) {
-            emptyText.setText(allData.isEmpty() ? "暂无服务数据" : "未找到匹配服务");
+            emptyText.setText(allData.isEmpty() ? R.string.svc_empty : R.string.svc_no_match);
             emptyText.setVisibility(View.VISIBLE);
             recycler.setVisibility(View.GONE);
         } else {
@@ -125,7 +171,7 @@ public class ServicesFragment extends Fragment {
     private void onToggle(ServiceInfo s) {
         if (!s.hasInit) { toastNoInit(s.name); return; }
         if (s.running) {
-            confirm("停止 " + s.name + " ？", s.name, "stop");
+            confirm("停止 " + s.name + " ？期间依赖它的功能将不可用。", s.name, "stop");
         } else {
             runAction(s.name, "start", true);
         }
@@ -150,7 +196,7 @@ public class ServicesFragment extends Fragment {
         new AlertDialog.Builder(requireContext())
                 .setTitle("确认操作")
                 .setMessage(msg)
-                .setNegativeButton("取消", null)
+                .setNegativeButton(R.string.oc_cancel, null)
                 .setPositiveButton("确定", (d, w) -> runAction(name, action, true))
                 .show();
     }
@@ -216,35 +262,50 @@ public class ServicesFragment extends Fragment {
             h.name.setText(s.name);
 
             h.running.setText(s.getRunningText());
-            h.running.setTextColor(getResources().getColor(
-                    s.running ? R.color.status_on : R.color.status_off));
+            h.running.setBackgroundResource(s.running
+                    ? R.drawable.bg_chip_success : R.drawable.bg_chip_neutral);
+            h.running.setTextColor(ContextCompat.getColor(requireContext(),
+                    s.running ? R.color.status_on : R.color.text_secondary));
 
-            h.enabled.setText(s.getEnabledText());
-            h.enabled.setTextColor(getResources().getColor(
+            StringBuilder subtitle = new StringBuilder();
+            subtitle.append(s.getRunningText()).append(" · PID ").append(s.getPidDisplay());
+            if (s.hasInit) subtitle.append(" · ").append(s.getStartOrderDisplay());
+            if (s.instanceCount > 1) subtitle.append(" · ").append(s.instanceCount).append(" 实例");
+            h.subtitle.setText(subtitle.toString());
+
+            h.badgeNoInit.setVisibility(s.hasInit ? View.GONE : View.VISIBLE);
+
+            h.enabled.setText(s.hasInit
+                    ? getString(s.enabled ? R.string.svc_enabled : R.string.svc_disabled)
+                    : s.getEnabledText());
+            h.enabled.setTextColor(ContextCompat.getColor(requireContext(),
                     s.hasInit && s.enabled ? R.color.status_on : R.color.text_secondary));
 
-            h.pid.setText("PID: " + s.getPidDisplay());
-            h.order.setText(s.hasInit ? ("启动顺序: " + s.getStartOrderDisplay()) : "");
-            h.command.setText(s.command == null || s.command.isEmpty() ? "—" : s.command);
-
             boolean controllable = s.hasInit;
+            h.swAutostart.setOnCheckedChangeListener(null);
+            h.swAutostart.setChecked(s.enabled);
+            h.swAutostart.setEnabled(controllable);
+            h.swAutostart.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                if (isChecked != s.enabled) onAutostart(s);
+            });
+
+            h.dot.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                    ContextCompat.getColor(requireContext(),
+                            s.running ? R.color.status_on : R.color.status_off)));
+
             h.toggle.setEnabled(controllable);
             h.restart.setEnabled(controllable);
             h.status.setEnabled(controllable);
-            h.autostart.setEnabled(controllable);
             float alpha = controllable ? 1f : 0.4f;
             h.toggle.setAlpha(alpha);
             h.restart.setAlpha(alpha);
             h.status.setAlpha(alpha);
-            h.autostart.setAlpha(alpha);
 
-            h.toggle.setText(s.running ? "停止" : "启动");
-            h.autostart.setText(controllable ? (s.enabled ? "自启:开" : "自启:关") : "自启:—");
+            h.toggle.setText(s.running ? R.string.svc_stop : R.string.svc_start);
 
             h.toggle.setOnClickListener(v -> onToggle(s));
             h.restart.setOnClickListener(v -> onRestart(s));
             h.status.setOnClickListener(v -> onStatus(s));
-            h.autostart.setOnClickListener(v -> onAutostart(s));
         }
 
         @Override
@@ -253,21 +314,23 @@ public class ServicesFragment extends Fragment {
         }
 
         class VH extends RecyclerView.ViewHolder {
-            TextView name, running, enabled, pid, order, command;
-            TextView toggle, restart, status, autostart;
+            TextView name, subtitle, running, badgeNoInit, enabled;
+            TextView toggle, restart, status;
+            SwitchMaterial swAutostart;
+            View dot;
 
             VH(@NonNull View v) {
                 super(v);
+                dot = v.findViewById(R.id.dot_status);
                 name = v.findViewById(R.id.tv_name);
+                subtitle = v.findViewById(R.id.tv_subtitle);
                 running = v.findViewById(R.id.tv_running);
+                badgeNoInit = v.findViewById(R.id.tv_badge_noinit);
                 enabled = v.findViewById(R.id.tv_enabled);
-                pid = v.findViewById(R.id.tv_pid);
-                order = v.findViewById(R.id.tv_order);
-                command = v.findViewById(R.id.tv_command);
+                swAutostart = v.findViewById(R.id.sw_autostart);
                 toggle = v.findViewById(R.id.btn_toggle);
                 restart = v.findViewById(R.id.btn_restart);
                 status = v.findViewById(R.id.btn_status);
-                autostart = v.findViewById(R.id.btn_autostart);
             }
         }
     }

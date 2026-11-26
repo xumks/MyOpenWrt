@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="primary">#FF4B8AFF</color>
+    <color name="primary_dark">#FF2C5EDB</color>
+    <color name="primary_light">#FF6B9BFF</color>
+    <color name="secondary">#FF9B7DFF</color>
+    <color name="accent">#FF25D6C4</color>
+
+    <color name="bg_screen">#FF0A0F1E</color>
+    <color name="card_bg">#FF161E30</color>
+    <color name="text_primary">#FFE8EDF7</color>
+    <color name="text_secondary">#FF9AA6BE</color>
+    <color name="divider">#33FFFFFF</color>
+
+    <color name="status_on">#FF27C281</color>
+    <color name="status_off">#FF9AA3B2</color>
+    <color name="danger">#FFE06666</color>
+    <color name="warning">#FFE0A100</color>
+
+    <color name="glass_fill">#11FFFFFF</color>
+    <color name="glass_border">#1FFFFFFF</color>
+    <color name="glass_input_fill">#0FFFFFFF</color>
+    <color name="glass_nav_fill">#E6111A2C</color>
+    <color name="glass_nav_border">#24FFFFFF</color>
+    <color name="nav_selected">#3D3E7BFA</color>
+
+    <color name="aurora_start">#FF0A0F1E</color>
+    <color name="aurora_mid">#FF131A2C</color>
+    <color name="aurora_end">#FF0B1220</color>
+    <color name="blob_blue">#4D6C8CFF</color>
+    <color name="blob_teal">#2E7DE2D1</color>
+    <color name="blob_purple">#38B79CFF</color>
+
+    <color name="hero_start">#FF3A66E0</color>
+    <color name="hero_end">#FF6A4BE0</color>
+</resources>

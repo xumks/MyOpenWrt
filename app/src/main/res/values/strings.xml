@@ -9,13 +9,25 @@
 
     <!-- Settings -->
     <string name="settings_title">路由器连接设置</string>
+    <string name="settings_page_title">设置</string>
+    <string name="settings_subtitle">通过 ubus over HTTP 管理路由器</string>
+    <string name="settings_section_router">路由器连接</string>
     <string name="hint_host">路由器地址（如 192.168.1.1）</string>
     <string name="hint_port">端口（默认 80）</string>
     <string name="hint_username">用户名（默认 root）</string>
     <string name="hint_password">密码</string>
-    <string name="label_https">使用 HTTPS</string>
+    <string name="label_https">HTTPS</string>
     <string name="btn_save_connect">保存并连接</string>
     <string name="btn_test">测试连接</string>
+    <string name="btn_logout">断开登录</string>
+    <string name="state_connected">已连接</string>
+    <string name="state_disconnected">未连接</string>
+    <string name="about_title">关于</string>
+    <string name="about_app_name">应用名称</string>
+    <string name="about_version">版本</string>
+    <string name="about_protocol">通信协议</string>
+    <string name="about_min_system">最低系统</string>
+    <string name="about_note">本应用通过路由器开放的 ubus HTTP 接口工作，连接信息仅保存在本机。为兼容自签名证书，HTTPS 模式不校验证书，建议仅在可信局域网内使用。</string>
 
     <!-- Dashboard -->
     <string name="dashboard_title">系统概览</string>
@@ -32,9 +44,47 @@
     <string name="btn_reboot">重启路由器</string>
     <string name="empty_not_connected">尚未连接路由器\n请先到「设置」配置连接信息</string>
     <string name="btn_go_settings">前往设置</string>
+    <string name="btn_retry">重试</string>
+    <string name="section_runtime">运行状态</string>
+    <string name="section_system">系统信息</string>
+    <string name="section_quick">快捷操作</string>
+    <string name="label_memory_title">内存占用</string>
+    <string name="hero_label_firmware">固件</string>
+    <string name="hero_label_kernel">内核</string>
+    <string name="hero_label_uptime">运行时长</string>
+    <string name="hero_online">在线</string>
+    <string name="action_services">服务与插件管理</string>
+    <string name="action_services_sub">启停 / 重启 / 开机自启</string>
+    <string name="action_openclash">OpenClash 订阅</string>
+    <string name="action_openclash_sub">管理订阅地址与更新配置</string>
+    <string name="action_reboot">重启路由器</string>
+    <string name="action_reboot_sub">网络会中断约 1-2 分钟</string>
+    <string name="action_settings">连接设置</string>
+    <string name="action_settings_sub">修改路由器地址与登录账号</string>
 
     <!-- Network -->
     <string name="network_title">网络接口</string>
+    <string name="net_rx">接收</string>
+    <string name="net_tx">发送</string>
+    <string name="net_online">在线</string>
+    <string name="net_offline">离线</string>
+    <string name="net_no_ipv4">未分配 IPv4 地址</string>
+    <string name="net_ipv4_value">IPv4  %1$s</string>
+    <string name="net_detail_physical">物理设备</string>
+    <string name="net_detail_proto">协议</string>
+    <string name="net_detail_ipv4">IPv4</string>
+    <string name="net_detail_mask">掩码</string>
+    <string name="net_detail_ipv6">IPv6</string>
+    <string name="net_detail_mac">MAC</string>
+    <string name="net_detail_rxpkt">接收数据包</string>
+    <string name="net_detail_txpkt">发送数据包</string>
+    <string name="net_detail_rx">累计接收</string>
+    <string name="net_detail_tx">累计发送</string>
+    <string name="net_restart_iface">重启接口 %1$s</string>
+    <string name="net_restart_title">重启接口</string>
+    <string name="net_restart_msg">确定要重启接口 %1$s 吗？该接口的临时连接会短暂中断。</string>
+    <string name="net_restart_doing">正在重启接口 %1$s…</string>
+    <string name="net_restart_done">接口 %1$s 已重启</string>
 
     <!-- Devices -->
     <string name="devices_title">已连接设备</string>
@@ -54,16 +104,61 @@
     <string name="device_block_msg">拉黑后该设备将无法访问网络（含路由器与互联网），可随时解除。确定拉黑「%1$s」？</string>
     <string name="device_unblock_title">解除拉黑</string>
     <string name="device_unblock_msg">确定解除对该设备的拉黑？解除后其网络访问将恢复。</string>
+    <string name="device_expire_forever">永久</string>
+    <string name="device_expire_left">剩余 %1$s</string>
+    <string name="device_count">共 %1$d 台设备</string>
+    <string name="device_loading">正在读取租约…</string>
+    <string name="device_empty">暂无设备租约</string>
+    <string name="device_no_match">没有匹配的设备</string>
+    <string name="device_reload">重新读取</string>
 
     <!-- WiFi -->
     <string name="wifi_title">WiFi 状态</string>
+    <string name="wifi_subtitle">无线网络状态</string>
+    <string name="wifi_subtitle_count">%1$d 个射频 · %2$d 台设备已连接</string>
+    <string name="wifi_enabled">已启用</string>
+    <string name="wifi_disabled">未启用</string>
+    <string name="wifi_channel">信道 %1$s</string>
+    <string name="wifi_clients">%1$d 台设备</string>
+    <string name="wifi_hidden_ssid">(未广播)</string>
+    <string name="wifi_empty">未读取到无线信息（路由器可能未启用 WiFi 或固件不支持）</string>
+    <string name="wifi_no_clients">暂无关联客户端</string>
+    <string name="wifi_settings">WiFi 设置</string>
+    <string name="wifi_settings_title">WiFi 名称与密码</string>
+    <string name="wifi_settings_chooser">选择要修改的无线网络</string>
+    <string name="wifi_ssid_label">WiFi 名称 (SSID)</string>
+    <string name="wifi_key_label">WiFi 密码</string>
+    <string name="wifi_ssid_hint">请输入 WiFi 名称</string>
+    <string name="wifi_key_hint">留空则保持原密码不变</string>
+    <string name="wifi_tip">修改后路由器会重载无线配置，所有设备（包括本机）需要使用新的名称/密码重新连接。</string>
+    <string name="wifi_save_apply">保存并应用</string>
+    <string name="wifi_ssid_empty">请输入 WiFi 名称</string>
+    <string name="wifi_ssid_too_long">WiFi 名称不能超过 32 个字符</string>
+    <string name="wifi_key_invalid">密码需为 8-63 位字符，或 64 位十六进制</string>
+    <string name="wifi_saving">正在保存并应用…</string>
+    <string name="wifi_saved">已保存，正在应用新配置</string>
+    <string name="wifi_no_config">未读取到无线配置（可能是无线未启用或固件不支持）</string>
+    <string name="wifi_edit_action">修改名称/密码</string>
 
     <!-- Services -->
     <string name="services_title">服务与插件</string>
-    <string name="hint_search_service">搜索服务名称</string>
+    <string name="services_subtitle">启停、重启与开机自启管理</string>
+    <string name="hint_search_service">搜索服务名称，如 openclash</string>
     <string name="btn_services">服务与插件管理</string>
     <string name="svc_restart">重启</string>
     <string name="svc_status">状态</string>
+    <string name="svc_start">启动</string>
+    <string name="svc_stop">停止</string>
+    <string name="svc_autostart">开机自启</string>
+    <string name="svc_enabled">已启用</string>
+    <string name="svc_disabled">已禁用</string>
+    <string name="svc_only_runtime">仅运行实例</string>
+    <string name="filter_all">全部</string>
+    <string name="filter_running">运行中</string>
+    <string name="filter_enabled">开机自启</string>
+    <string name="svc_empty">没有可管理的服务</string>
+    <string name="svc_no_match">没有匹配的服务</string>
+    <string name="svc_reload">重新加载</string>
 
     <!-- OpenClash -->
     <string name="btn_openclash">OpenClash 订阅配置</string>
@@ -72,7 +167,7 @@
     <string name="oc_label_mode">代理模式</string>
     <string name="oc_label_current">当前配置</string>
     <string name="oc_label_count">订阅数量</string>
-    <string name="oc_hint">修改订阅后，请点击底部「更新订阅」下载并应用配置；OpenClash 运行中会自动重启生效。</string>
+    <string name="oc_hint">修改订阅后，请点击「更新订阅」下载并应用配置；OpenClash 运行中会自动重启生效。</string>
     <string name="oc_add">添加订阅</string>
     <string name="oc_update">更新订阅</string>
     <string name="oc_edit">编辑</string>
@@ -90,4 +185,5 @@
     <string name="oc_edit_title">编辑订阅</string>
     <string name="oc_save">保存</string>
     <string name="oc_cancel">取消</string>
+    <string name="oc_section_subs">订阅列表</string>
 </resources>

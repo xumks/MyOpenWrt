@@ -36,6 +36,7 @@ public class OpenClashFragment extends Fragment {
     private SwipeRefreshLayout swipe;
     private RecyclerView recycler;
     private TextView emptyText;
+    private TextView tvSubtitle;
     private View rootView;
     private SubAdapter adapter;
     private final List<OpenClashSubscribe> subs = new ArrayList<>();
@@ -56,12 +57,15 @@ public class OpenClashFragment extends Fragment {
         swipe = view.findViewById(R.id.swipe);
         recycler = view.findViewById(R.id.recycler);
         emptyText = view.findViewById(R.id.empty_text);
+        tvSubtitle = view.findViewById(R.id.tv_subtitle);
 
         recycler.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new SubAdapter();
         recycler.setAdapter(adapter);
 
+        swipe.setColorSchemeResources(R.color.primary);
         swipe.setOnRefreshListener(this::loadData);
+        view.findViewById(R.id.btn_refresh).setOnClickListener(v -> loadData());
         view.findViewById(R.id.btn_add).setOnClickListener(v -> showEditDialog(null));
         view.findViewById(R.id.btn_update).setOnClickListener(v -> updateSubscriptions());
     }
@@ -88,6 +92,9 @@ public class OpenClashFragment extends Fragment {
                 loaded = true;
                 swipe.setRefreshing(false);
                 bindStatus(result);
+                if (tvSubtitle != null) {
+                    tvSubtitle.setText("共 " + result.subscribes.size() + " 个订阅");
+                }
                 subs.clear();
                 subs.addAll(result.subscribes);
                 adapter.notifyDataSetChanged();
@@ -304,8 +311,10 @@ public class OpenClashFragment extends Fragment {
             h.address.setText(s.getDisplayAddress());
             h.current.setVisibility(s.isCurrent ? View.VISIBLE : View.GONE);
             h.state.setText(s.enabled ? R.string.oc_state_on : R.string.oc_state_off);
+            h.state.setBackgroundResource(s.enabled
+                    ? R.drawable.bg_chip_success : R.drawable.bg_chip_neutral);
             h.state.setTextColor(getResources().getColor(
-                    s.enabled ? R.color.status_on : R.color.status_off));
+                    s.enabled ? R.color.status_on : R.color.text_secondary));
             h.toggle.setText(s.enabled ? R.string.oc_disable_action : R.string.oc_enable_action);
 
             h.edit.setOnClickListener(v -> showEditDialog(s));

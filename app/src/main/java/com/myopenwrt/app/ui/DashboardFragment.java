@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -29,7 +30,10 @@ public class DashboardFragment extends Fragment {
     private ProgressBar progress;
     private View rootView;
     private View emptyView;
-    private Button btnGoSettings, btnReboot, btnServices, btnOpenClash;
+    private Button btnGoSettings;
+    private TextView tvSubtitle, tvHeroHostname, tvHeroModel, tvHeroFirmware, tvHeroKernel, tvHeroUptime;
+    private TextView tvLoad1, tvLoad5, tvLoad15, tvMemory;
+    private ProgressBar progressMemory;
 
     @Nullable
     @Override
@@ -48,33 +52,54 @@ public class DashboardFragment extends Fragment {
         progress = view.findViewById(R.id.progress);
         emptyView = view.findViewById(R.id.empty_view);
         btnGoSettings = view.findViewById(R.id.btn_go_settings);
-        btnReboot = view.findViewById(R.id.btn_reboot);
-        btnServices = view.findViewById(R.id.btn_services);
-        btnOpenClash = view.findViewById(R.id.btn_openclash);
+        tvSubtitle = view.findViewById(R.id.tv_subtitle);
+        tvHeroHostname = view.findViewById(R.id.tv_hero_hostname);
+        tvHeroModel = view.findViewById(R.id.tv_hero_model);
+        tvHeroFirmware = view.findViewById(R.id.tv_hero_firmware);
+        tvHeroKernel = view.findViewById(R.id.tv_hero_kernel);
+        tvHeroUptime = view.findViewById(R.id.tv_hero_uptime);
+        tvLoad1 = view.findViewById(R.id.tv_load1);
+        tvLoad5 = view.findViewById(R.id.tv_load5);
+        tvLoad15 = view.findViewById(R.id.tv_load15);
+        tvMemory = view.findViewById(R.id.tv_memory);
+        progressMemory = view.findViewById(R.id.progress_memory);
 
+        swipe.setColorSchemeResources(R.color.primary);
         swipe.setOnRefreshListener(this::loadData);
-        btnGoSettings.setOnClickListener(v -> {
-            if (getActivity() instanceof MainActivity) {
-                ((MainActivity) getActivity()).navigateTo(R.id.nav_settings);
-            }
-        });
-        btnReboot.setOnClickListener(v -> confirmReboot());
-        btnServices.setOnClickListener(v -> {
+        btnGoSettings.setOnClickListener(v -> openSettings());
+        view.findViewById(R.id.btn_go_settings_quick).setOnClickListener(v -> openSettings());
+        view.findViewById(R.id.btn_refresh).setOnClickListener(v -> loadData());
+        view.findViewById(R.id.btn_reboot).setOnClickListener(v -> confirmReboot());
+        view.findViewById(R.id.btn_services).setOnClickListener(v -> {
             if (getActivity() instanceof MainActivity) {
                 ((MainActivity) getActivity()).openServices();
             }
         });
-        btnOpenClash.setOnClickListener(v -> {
+        view.findViewById(R.id.btn_openclash).setOnClickListener(v -> {
             if (getActivity() instanceof MainActivity) {
                 ((MainActivity) getActivity()).openOpenClash();
             }
         });
     }
 
+    private void openSettings() {
+        if (getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).navigateTo(R.id.nav_settings);
+        }
+    }
+
     @Override
     public void onResume() {
         super.onResume();
+        updateSubtitle();
         loadData();
+    }
+
+    private void updateSubtitle() {
+        if (tvSubtitle == null) return;
+        tvSubtitle.setText(api.hasSession()
+                ? api.getConfig().getDisplayName()
+                : "尚未连接路由器，请先在设置中配置");
     }
 
     private void loadData() {
@@ -88,6 +113,7 @@ public class DashboardFragment extends Fragment {
         api.getSystemInfo(new ApiCallback<SystemInfo>() {
             @Override
             public void onSuccess(SystemInfo info) {
+                if (!isAdded()) return;
                 progress.setVisibility(View.GONE);
                 swipe.setRefreshing(false);
                 bind(info);
@@ -95,6 +121,7 @@ public class DashboardFragment extends Fragment {
 
             @Override
             public void onFailure(String message, Exception e) {
+                if (!isAdded()) return;
                 progress.setVisibility(View.GONE);
                 swipe.setRefreshing(false);
                 Toast.makeText(getContext(), "加载失败：" + message, Toast.LENGTH_LONG).show();
@@ -110,13 +137,25 @@ public class DashboardFragment extends Fragment {
         setRow(R.id.row_kernel, getString(R.string.label_kernel), info.kernel);
         setRow(R.id.row_hostname, getString(R.string.label_hostname), info.hostname);
         setRow(R.id.row_uptime, getString(R.string.label_uptime), FormatUtils.formatUptime(info.uptime));
-        setRow(R.id.row_load1, getString(R.string.label_load1), FormatUtils.formatLoad(info.load1));
-        setRow(R.id.row_load5, getString(R.string.label_load5), FormatUtils.formatLoad(info.load5));
-        setRow(R.id.row_load15, getString(R.string.label_load15), FormatUtils.formatLoad(info.load15));
-        setRow(R.id.row_memory, getString(R.string.label_memory),
-                FormatUtils.formatMemory(info.memoryTotal, info.getMemoryUsed()));
         setRow(R.id.row_swap, getString(R.string.label_swap),
                 FormatUtils.formatMemory(info.swapTotal, info.swapTotal - info.swapFree));
+
+        tvHeroHostname.setText(info.hostname != null ? info.hostname : "OpenWrt");
+        tvHeroModel.setText(info.model != null ? info.model : "—");
+        tvHeroFirmware.setText(info.release != null && !info.release.isEmpty() ? info.release : "—");
+        tvHeroKernel.setText(info.kernel != null && !info.kernel.isEmpty() ? info.kernel : "—");
+        tvHeroUptime.setText(FormatUtils.formatUptime(info.uptime));
+
+        tvLoad1.setText(FormatUtils.formatLoad(info.load1));
+        tvLoad5.setText(FormatUtils.formatLoad(info.load5));
+        tvLoad15.setText(FormatUtils.formatLoad(info.load15));
+
+        long used = info.getMemoryUsed();
+        tvMemory.setText(FormatUtils.formatMemory(info.memoryTotal, used));
+        int percent = info.memoryTotal > 0
+                ? (int) Math.min(100, used * 100 / info.memoryTotal)
+                : 0;
+        progressMemory.setProgress(percent);
     }
 
     private void setRow(int rowId, String label, String value) {
@@ -126,7 +165,7 @@ public class DashboardFragment extends Fragment {
         TextView tvLabel = row.findViewById(R.id.info_label);
         TextView tvValue = row.findViewById(R.id.info_value);
         if (tvLabel != null) tvLabel.setText(label);
-        if (tvValue != null) tvValue.setText(value != null ? value : "—");
+        if (tvValue != null) tvValue.setText(value != null && !value.isEmpty() ? value : "—");
     }
 
     private void confirmReboot() {
@@ -145,6 +184,7 @@ public class DashboardFragment extends Fragment {
             public void onSuccess(Void result) {
                 Toast.makeText(getContext(), "重启命令已发送，请等待路由器重新上线", Toast.LENGTH_LONG).show();
             }
+
             @Override
             public void onFailure(String message, Exception e) {
                 Toast.makeText(getContext(), "重启失败：" + message, Toast.LENGTH_LONG).show();

@@ -35,6 +35,7 @@ public class DevicesFragment extends Fragment {
     private RecyclerView recycler;
     private TextView emptyText;
     private EditText etSearch;
+    private TextView tvSubtitle;
     private DeviceAdapter adapter;
     private final List<DhcpLease> allData = new ArrayList<>();
     private final List<DhcpLease> filtered = new ArrayList<>();
@@ -54,12 +55,15 @@ public class DevicesFragment extends Fragment {
         recycler = view.findViewById(R.id.recycler);
         emptyText = view.findViewById(R.id.empty_text);
         etSearch = view.findViewById(R.id.et_search);
+        tvSubtitle = view.findViewById(R.id.tv_subtitle);
 
         recycler.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new DeviceAdapter();
         recycler.setAdapter(adapter);
 
+        swipe.setColorSchemeResources(R.color.primary);
         swipe.setOnRefreshListener(this::loadData);
+        view.findViewById(R.id.btn_refresh).setOnClickListener(v -> loadData());
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
             @Override public void onTextChanged(CharSequence s, int a, int b, int c) { applyFilter(s.toString()); }
@@ -79,19 +83,25 @@ public class DevicesFragment extends Fragment {
             emptyText.setVisibility(View.VISIBLE);
             recycler.setVisibility(View.GONE);
             swipe.setRefreshing(false);
+            if (tvSubtitle != null) tvSubtitle.setText(R.string.state_disconnected);
             return;
         }
         api.getDhcpLeases(new ApiCallback<List<DhcpLease>>() {
             @Override
             public void onSuccess(List<DhcpLease> result) {
+                if (!isAdded() || getView() == null) return;
                 swipe.setRefreshing(false);
                 allData.clear();
                 allData.addAll(result);
+                if (tvSubtitle != null) {
+                    tvSubtitle.setText(getString(R.string.device_count, allData.size()));
+                }
                 applyFilter(etSearch.getText().toString());
             }
 
             @Override
             public void onFailure(String message, Exception e) {
+                if (!isAdded() || getView() == null) return;
                 swipe.setRefreshing(false);
                 Toast.makeText(getContext(), "加载失败：" + message, Toast.LENGTH_LONG).show();
             }
@@ -110,7 +120,7 @@ public class DevicesFragment extends Fragment {
             }
         }
         if (filtered.isEmpty()) {
-            emptyText.setText(allData.isEmpty() ? "暂无设备数据" : "未找到匹配设备");
+            emptyText.setText(allData.isEmpty() ? R.string.device_empty : R.string.device_no_match);
             emptyText.setVisibility(View.VISIBLE);
             recycler.setVisibility(View.GONE);
         } else {
@@ -137,7 +147,7 @@ public class DevicesFragment extends Fragment {
     }
 
     private void showStaticDialog(DhcpLease d) {
-        if (!isAdded()) return;
+        if (!isAdded() || getView() == null) return;
         View content = LayoutInflater.from(requireContext())
                 .inflate(R.layout.dialog_static_ip, null, false);
         TextView tip = content.findViewById(R.id.tv_tip);
@@ -192,14 +202,14 @@ public class DevicesFragment extends Fragment {
         return new ApiCallback<Void>() {
             @Override
             public void onSuccess(Void result) {
-                if (!isAdded()) return;
+                if (!isAdded() || getView() == null) return;
                 Toast.makeText(getContext(), successMsg, Toast.LENGTH_SHORT).show();
                 loadData();
             }
 
             @Override
             public void onFailure(String message, Exception e) {
-                if (!isAdded()) return;
+                if (!isAdded() || getView() == null) return;
                 Toast.makeText(getContext(), "操作失败：" + message, Toast.LENGTH_LONG).show();
             }
         };
@@ -233,10 +243,18 @@ public class DevicesFragment extends Fragment {
         @Override
         public void onBindViewHolder(@NonNull VH h, int position) {
             DhcpLease d = filtered.get(position);
-            h.hostname.setText(d.getDisplayHostname());
+            String name = d.getDisplayHostname();
+            h.avatar.setText("(未知)".equals(name) || name.isEmpty()
+                    ? "?"
+                    : name.substring(0, 1).toUpperCase(Locale.getDefault()));
+            h.avatar.setBackgroundResource(d.blocked
+                    ? R.drawable.bg_avatar_blocked : R.drawable.bg_avatar);
+            h.hostname.setText(name);
             h.ip.setText(d.ip == null || d.ip.isEmpty() ? "—" : d.ip);
             h.mac.setText(d.mac);
-            h.expires.setText("租约剩余：" + d.getExpiresDisplay());
+            h.expires.setText(d.expires <= 0
+                    ? getString(R.string.device_expire_forever)
+                    : getString(R.string.device_expire_left, d.getExpiresDisplay()));
 
             boolean fixed = d.staticSid != null;
             h.staticBadge.setVisibility(fixed ? View.VISIBLE : View.GONE);
@@ -248,9 +266,11 @@ public class DevicesFragment extends Fragment {
 
             h.btnStatic.setText(fixed ? R.string.device_unfix_ip : R.string.device_fix_ip);
             h.btnBlock.setText(d.blocked ? R.string.device_unblock : R.string.device_block);
+            h.btnBlock.setBackgroundResource(d.blocked
+                    ? R.drawable.bg_button_success : R.drawable.bg_button_danger);
             h.btnBlock.setTextColor(d.blocked
-                    ? getResources().getColor(R.color.primary)
-                    : Color.parseColor("#D32F2F"));
+                    ? getResources().getColor(R.color.status_on)
+                    : getResources().getColor(R.color.danger));
 
             h.btnStatic.setOnClickListener(v -> onStaticClick(d));
             h.btnBlock.setOnClickListener(v -> onBlockClick(d));
@@ -262,9 +282,10 @@ public class DevicesFragment extends Fragment {
         }
 
         class VH extends RecyclerView.ViewHolder {
-            TextView hostname, ip, mac, expires, staticBadge, blockedBadge, btnStatic, btnBlock;
+            TextView avatar, hostname, ip, mac, expires, staticBadge, blockedBadge, btnStatic, btnBlock;
             VH(@NonNull View v) {
                 super(v);
+                avatar = v.findViewById(R.id.tv_avatar);
                 hostname = v.findViewById(R.id.tv_hostname);
                 ip = v.findViewById(R.id.tv_ip);
                 mac = v.findViewById(R.id.tv_mac);

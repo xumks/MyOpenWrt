@@ -11,6 +11,7 @@ import com.myopenwrt.app.api.model.OpenClashSubscribe;
 import com.myopenwrt.app.api.model.ServiceInfo;
 import com.myopenwrt.app.api.model.SystemInfo;
 import com.myopenwrt.app.api.model.WifiInfo;
+import com.myopenwrt.app.api.model.WirelessConfig;
 import com.myopenwrt.app.data.PrefsManager;
 import com.myopenwrt.app.data.RouterConfig;
 
@@ -130,7 +131,7 @@ public class OpenWrtApi {
     private JSONObject callUbus(OkHttpClient httpClient, String object, String method, JSONObject params) throws Exception {
         if (config == null) throw new IOException("未配置路由器连接信息");
         ensureSession();
-        return doCall(httpClient, sessionId, object, method, params);
+        return doCall(httpClient, sessionId, object, method, params, false);
     }
 
     private synchronized void ensureSession() throws Exception {
@@ -139,7 +140,8 @@ public class OpenWrtApi {
         }
     }
 
-    private JSONObject doCall(OkHttpClient httpClient, String sid, String object, String method, JSONObject params) throws Exception {
+    private JSONObject doCall(OkHttpClient httpClient, String sid, String object, String method,
+                              JSONObject params, boolean retried) throws Exception {
         JSONObject body = new JSONObject();
         body.put("jsonrpc", "2.0");
         body.put("id", callId++);
@@ -177,9 +179,18 @@ public class OpenWrtApi {
             if (first instanceof Integer) {
                 int code = (Integer) first;
                 if (code == ERR_ACCESS_DENIED) {
-                    // 会话失效，重新登录后重试一次
-                    doLogin();
-                    return doCall(httpClient, sessionId, object, method, params);
+                    if (retried) throw new IOException("ubus 权限不足（错误码 6）");
+                    synchronized (this) {
+                        if (sid != null && sid.equals(sessionId)) {
+                            sessionId = null;
+                            prefs.clearSession();
+                            doLogin();
+                        } else if (sessionId == null || sessionId.isEmpty()) {
+                            doLogin();
+                        }
+                    }
+                    // 若其他线程已刷新会话则直接复用；每次调用最多重试一次。
+                    return doCall(httpClient, sessionId, object, method, params, true);
                 }
                 if (code != 0) {
                     throw new IOException("ubus 返回错误码 " + code + ": " +
@@ -541,7 +552,6 @@ public class OpenWrtApi {
                 if (devicesObj != null) {
                     Iterator<String> keys = devicesObj.keys();
                     while (keys.hasNext()) {
-                        got = true;
                         String dev = keys.next();
                         WifiInfo wifi = new WifiInfo();
                         wifi.ifname = dev;
@@ -549,6 +559,8 @@ public class OpenWrtApi {
                             JSONObject p = new JSONObject();
                             p.put("device", dev);
                             JSONObject info = callUbus("iwinfo", "info", p);
+                            if (info == null) throw new IOException("iwinfo info 返回空响应");
+                            got = true;
                             wifi.ssid = info.optString("ssid", "—");
                             wifi.mode = info.optString("mode", "—");
                             wifi.channel = info.optString("channel", "—");
@@ -586,7 +598,7 @@ public class OpenWrtApi {
                     }
                 }
             } catch (Exception ignored) { }
-            // 回退：部分固件（如 ImmortalWrt）iwinfo ubus 设备列表为空，改用命令输出解析
+            // 设备列表为空或所有射频 info 读取失败时，改用命令输出解析。
             if (!got) {
                 list = parseWifiViaExec();
             }
@@ -594,18 +606,81 @@ public class OpenWrtApi {
         }, callback);
     }
 
-    /** 通过执行 iwinfo 命令并解析文本获取 WiFi 信息（兼容 ubus iwinfo 不可用的固件）。 */
-    private List<WifiInfo> parseWifiViaExec() {
-        List<WifiInfo> list = new ArrayList<>();
-        try {
-            String text = execIwinfo(new String[]{});
-            list = parseIwinfoText(text);
-            for (WifiInfo w : list) {
-                try {
-                    w.clients = parseAssoclist(execIwinfo(new String[]{w.ifname, "assoclist"}));
-                } catch (Exception ignored) { }
+    // ============================ WiFi 名称 / 密码 ============================
+
+    /** 读取所有 AP 模式的无线配置（/etc/config/wireless）。 */
+    public void getWirelessConfigs(ApiCallback<List<WirelessConfig>> callback) {
+        runAsync(() -> {
+            List<WirelessConfig> list = new ArrayList<>();
+            LinkedHashMap<String, LinkedHashMap<String, String>> sections = readUciConfig("wireless");
+            for (Map.Entry<String, LinkedHashMap<String, String>> e : sections.entrySet()) {
+                LinkedHashMap<String, String> sec = e.getValue();
+                if (!"wifi-iface".equals(sec.get(".type"))) continue;
+                String mode = sec.get("mode");
+                if (mode != null && !mode.trim().isEmpty() && !"ap".equalsIgnoreCase(mode)) continue;
+
+                WirelessConfig c = new WirelessConfig();
+                c.sid = e.getKey();
+                c.ssid = sec.get("ssid");
+                c.key = sec.get("key");
+                c.encryption = firstNonEmpty(sec.get("encryption"), "none");
+                c.device = firstNonEmpty(sec.get("device"), sec.get("ifname"), "—");
+                c.disabled = truthy(sec.get("disabled"));
+                list.add(c);
             }
-        } catch (Exception ignored) { }
+            return list;
+        }, callback);
+    }
+
+    /** 修改 AP 的 SSID 与密码（key 为空表示保持原密码），随后异步重载无线配置。 */
+    public void updateWirelessConfig(String sid, String ssid, String key, ApiCallback<Void> callback) {
+        runAsync(() -> {
+            if (sid == null || sid.isEmpty()) throw new IOException("无线配置无效");
+            final String newSsid = ssid == null ? "" : ssid.trim();
+            if (newSsid.isEmpty()) throw new IOException("请输入 WiFi 名称");
+            if (newSsid.length() > 32) throw new IOException("WiFi 名称不能超过 32 个字符");
+
+            final String newKey = key == null ? "" : key;
+            if (!newKey.isEmpty() && !isValidWifiKey(newKey)) {
+                throw new IOException("密码需为 8-63 位字符，或 64 位十六进制");
+            }
+
+            String encryption = null;
+            try {
+                LinkedHashMap<String, LinkedHashMap<String, String>> sections = readUciConfig("wireless");
+                LinkedHashMap<String, String> sec = sections.get(sid);
+                if (sec != null) encryption = sec.get("encryption");
+            } catch (Exception ignored) { }
+
+            execUci("set", "wireless." + sid + ".ssid=" + newSsid);
+            if (!newKey.isEmpty()) {
+                execUci("set", "wireless." + sid + ".key=" + newKey);
+                if (encryption == null || encryption.isEmpty()
+                        || "none".equalsIgnoreCase(encryption)) {
+                    execUci("set", "wireless." + sid + ".encryption=psk2");
+                }
+            }
+            execUci("commit", "wireless");
+            // 异步重载，避免本机正好连着该 WiFi 时请求被中断而误报失败
+            execShell("(/sbin/wifi reload || /etc/init.d/network reload) >/dev/null 2>&1 &");
+            return null;
+        }, callback);
+    }
+
+    private static boolean isValidWifiKey(String key) {
+        if (key.length() >= 8 && key.length() <= 63) return true;
+        return key.length() == 64 && key.matches("[0-9A-Fa-f]{64}");
+    }
+
+    /** 通过执行 iwinfo 命令并解析文本获取 WiFi 信息（兼容 ubus iwinfo 不可用的固件）。 */
+    private List<WifiInfo> parseWifiViaExec() throws Exception {
+        String text = execIwinfo(new String[]{});
+        List<WifiInfo> list = parseIwinfoText(text);
+        for (WifiInfo w : list) {
+            try {
+                w.clients = parseAssoclist(execIwinfo(new String[]{w.ifname, "assoclist"}));
+            } catch (Exception ignored) { }
+        }
         return list;
     }
 
