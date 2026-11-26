@@ -57,7 +57,6 @@ public class PrefsManager {
     public void saveSession(String sessionId) {
         prefs.edit()
                 .putString(KEY_SESSION, sessionId)
-                .putLong(KEY_SESSION_TIME, System.currentTimeMillis())
                 .apply();
     }
 
