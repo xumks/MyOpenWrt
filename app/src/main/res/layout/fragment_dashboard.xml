@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- 未连接提示 -->
+    <LinearLayout
+        android:id="@+id/empty_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="32dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/empty_not_connected"
+            android:textColor="@color/text_secondary"
+            android:textSize="16sp"
+            android:lineSpacingExtra="6dp" />
+
+        <Button
+            android:id="@+id/btn_go_settings"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/btn_go_settings"
+            android:backgroundTint="@color/primary" />
+    </LinearLayout>
+
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipe"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="16dp">
+
+                <ProgressBar
+                    android:id="@+id/progress"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="24dp"
+                    android:visibility="gone" />
+
+                <!-- 系统信息卡片 -->
+                <LinearLayout style="@style/CardContainer"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/dashboard_title"
+                        android:textColor="@color/primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:paddingBottom="8dp" />
+
+                    <include layout="@layout/item_info_row" android:id="@+id/row_model" />
+                    <include layout="@layout/item_info_row" android:id="@+id/row_firmware" />
+                    <include layout="@layout/item_info_row" android:id="@+id/row_kernel" />
+                    <include layout="@layout/item_info_row" android:id="@+id/row_hostname" />
+                    <include layout="@layout/item_info_row" android:id="@+id/row_uptime" />
+                </LinearLayout>
+
+                <!-- 负载卡片 -->
+                <LinearLayout style="@style/CardContainer"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="系统负载"
+                        android:textColor="@color/primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:paddingBottom="8dp" />
+                    <include layout="@layout/item_info_row" android:id="@+id/row_load1" />
+                    <include layout="@layout/item_info_row" android:id="@+id/row_load5" />
+                    <include layout="@layout/item_info_row" android:id="@+id/row_load15" />
+                </LinearLayout>
+
+                <!-- 内存卡片 -->
+                <LinearLayout style="@style/CardContainer"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="内存 / 交换"
+                        android:textColor="@color/primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:paddingBottom="8dp" />
+                    <include layout="@layout/item_info_row" android:id="@+id/row_memory" />
+                    <include layout="@layout/item_info_row" android:id="@+id/row_swap" />
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btn_services"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/btn_services"
+                    android:backgroundTint="@color/primary" />
+
+                <Button
+                    android:id="@+id/btn_openclash"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/btn_openclash" />
+
+                <Button
+                    android:id="@+id/btn_reboot"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/btn_reboot"
+                    android:backgroundTint="#D32F2F" />
+
+            </LinearLayout>
+        </ScrollView>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+</FrameLayout>

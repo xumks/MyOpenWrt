@@ -1,0 +1,12 @@
+*.iml
+.gradle/
+.idea/
+build/
+app/build/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
+# 本地截图（仓库中展示用的副本位于 docs/screenshots）
+/screenshots/

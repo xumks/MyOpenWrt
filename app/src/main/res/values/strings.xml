@@ -1,0 +1,93 @@
+<resources>
+    <string name="app_name">OpenWrt 管理</string>
+
+    <string name="nav_dashboard">概览</string>
+    <string name="nav_network">网络</string>
+    <string name="nav_devices">设备</string>
+    <string name="nav_wifi">WiFi</string>
+    <string name="nav_settings">设置</string>
+
+    <!-- Settings -->
+    <string name="settings_title">路由器连接设置</string>
+    <string name="hint_host">路由器地址（如 192.168.1.1）</string>
+    <string name="hint_port">端口（默认 80）</string>
+    <string name="hint_username">用户名（默认 root）</string>
+    <string name="hint_password">密码</string>
+    <string name="label_https">使用 HTTPS</string>
+    <string name="btn_save_connect">保存并连接</string>
+    <string name="btn_test">测试连接</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_title">系统概览</string>
+    <string name="label_model">设备型号</string>
+    <string name="label_firmware">固件版本</string>
+    <string name="label_kernel">内核版本</string>
+    <string name="label_hostname">主机名</string>
+    <string name="label_uptime">运行时间</string>
+    <string name="label_load1">负载 (1分)</string>
+    <string name="label_load5">负载 (5分)</string>
+    <string name="label_load15">负载 (15分)</string>
+    <string name="label_memory">内存</string>
+    <string name="label_swap">交换分区</string>
+    <string name="btn_reboot">重启路由器</string>
+    <string name="empty_not_connected">尚未连接路由器\n请先到「设置」配置连接信息</string>
+    <string name="btn_go_settings">前往设置</string>
+
+    <!-- Network -->
+    <string name="network_title">网络接口</string>
+
+    <!-- Devices -->
+    <string name="devices_title">已连接设备</string>
+    <string name="hint_search">搜索主机名 / IP / MAC</string>
+    <string name="device_blocked_badge">已拉黑</string>
+    <string name="device_static_badge">固定 IP：%1$s</string>
+    <string name="device_fix_ip">固定 IP</string>
+    <string name="device_unfix_ip">取消固定</string>
+    <string name="device_block">拉黑</string>
+    <string name="device_unblock">解除拉黑</string>
+    <string name="device_ip_hint">固定 IP（如 192.168.10.100）</string>
+    <string name="device_static_title">固定 IP</string>
+    <string name="device_static_tip">为 %1$s（%2$s）绑定固定 IP，设备重新连接后生效。</string>
+    <string name="device_unfix_title">取消固定 IP</string>
+    <string name="device_unfix_msg">确定取消该设备的固定 IP？取消后设备将恢复动态获取地址。</string>
+    <string name="device_block_title">拉黑设备</string>
+    <string name="device_block_msg">拉黑后该设备将无法访问网络（含路由器与互联网），可随时解除。确定拉黑「%1$s」？</string>
+    <string name="device_unblock_title">解除拉黑</string>
+    <string name="device_unblock_msg">确定解除对该设备的拉黑？解除后其网络访问将恢复。</string>
+
+    <!-- WiFi -->
+    <string name="wifi_title">WiFi 状态</string>
+
+    <!-- Services -->
+    <string name="services_title">服务与插件</string>
+    <string name="hint_search_service">搜索服务名称</string>
+    <string name="btn_services">服务与插件管理</string>
+    <string name="svc_restart">重启</string>
+    <string name="svc_status">状态</string>
+
+    <!-- OpenClash -->
+    <string name="btn_openclash">OpenClash 订阅配置</string>
+    <string name="oc_title">OpenClash 状态</string>
+    <string name="oc_label_running">运行状态</string>
+    <string name="oc_label_mode">代理模式</string>
+    <string name="oc_label_current">当前配置</string>
+    <string name="oc_label_count">订阅数量</string>
+    <string name="oc_hint">修改订阅后，请点击底部「更新订阅」下载并应用配置；OpenClash 运行中会自动重启生效。</string>
+    <string name="oc_add">添加订阅</string>
+    <string name="oc_update">更新订阅</string>
+    <string name="oc_edit">编辑</string>
+    <string name="oc_delete">删除</string>
+    <string name="oc_enable_action">启用</string>
+    <string name="oc_disable_action">禁用</string>
+    <string name="oc_state_on">已启用</string>
+    <string name="oc_state_off">已禁用</string>
+    <string name="oc_current_badge">当前配置</string>
+    <string name="oc_empty">暂无订阅，点击下方「添加订阅」新建</string>
+    <string name="oc_name_hint">订阅名称（如 c-01）</string>
+    <string name="oc_address_hint">订阅地址（http/https 链接）</string>
+    <string name="oc_enable_label">启用该订阅</string>
+    <string name="oc_new_title">添加订阅</string>
+    <string name="oc_edit_title">编辑订阅</string>
+    <string name="oc_save">保存</string>
+    <string name="oc_cancel">取消</string>
+</resources>
