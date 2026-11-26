@@ -10,3 +10,6 @@ captures/
 
 # 本地截图（仓库中展示用的副本位于 docs/screenshots）
 /screenshots/
+
+# 发版产物走 GitHub Releases，不入库
+/app/release/
